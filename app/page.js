@@ -1,5 +1,5 @@
 "use client"
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { FilesetResolver, ImageSegmenter } from '@mediapipe/tasks-vision';
 
 const legendColors = [
@@ -29,6 +29,16 @@ const legendColors = [
 export default function Home() {
  const imgRef = useRef(null);
  const canvasRef = useRef(null);
+ const [selectedFile, setSelectedFile] = useState('/img.jpg');
+
+ const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    setSelectedFile(URL.createObjectURL(file)); // Create a URL for the selected file
+    // document.getElementById("img").src = selectedFile;
+    // imgRef.current.src = selectedFile;
+  }
+};
 
  const createImageSegmenter = async () => {
    const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm');
@@ -91,30 +101,46 @@ export default function Home() {
             imageData[i * 4 + 3] = 0; // Alpha
           }
         }
-
+        console.log(mask);
         const uint8Array = new Uint8ClampedArray(imageData.buffer);
         const dataNew = new ImageData(uint8Array, width, height);
         ctx.putImageData(dataNew, 0, 0);
+
+        const dataURL = canvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = dataURL;
+        a.download = "segmented_image.png";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
      });
    }
  }
 
  return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <p>Segment Any Image</p>
+      <h2>Iron the Dress</h2>
+      <p>Dress Mask Generator</p>
+      <input
+        type="file"
+        accept="image/*" // Accept only image files
+        onChange={handleFileUpload} // Callback function to handle file selection
+      />
 
+        <button className='bg-orange-500 px-10 py-5 rounded-xl' onClick={createImageSegmenter}>Segment & Generate Image</button>
       <div className="flex justify-between">
         <img
-          src="/img.jpg"
+          src={selectedFile}
           id='img'
           ref={imgRef}
           alt="Img"
+          className='scale-50'
         />
 
-        <canvas ref={canvasRef} id="canvas"></canvas>
+        <canvas ref={canvasRef} id="canvas" className='scale-50'></canvas>
       </div>
 
-      <button onClick={createImageSegmenter}>Segment Image</button>
     </main>
  );
 }
