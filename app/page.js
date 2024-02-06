@@ -45,7 +45,6 @@ export default function Home() {
 
    const imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
      baseOptions: {
-      //  modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',
         modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite',
        delegate: "CPU"
      },
@@ -73,26 +72,28 @@ export default function Home() {
 
         const mask = result.categoryMask.getAsUint8Array();
 
-        for (let i in mask) {
+        for (let i = 0; i <= mask.length; i++) {
           const legendColor = legendColors[mask[i] % legendColors.length]; // getting the color set for the segmented part
-          // console.log(mask[i] % legendColors.length);
-          // We divide by 2 to avegrage out the pixel color values from the original image and the legend color
-          // imageData[i * 4] = (legendColor[0] + imageData[i * 4]) / 2; // Red 
-          // imageData[i * 4 + 1] = (legendColor[1] + imageData[i * 4 + 1]) / 2; // Green
-          // imageData[i * 4 + 2] = (legendColor[2] + imageData[i * 4 + 2]) / 2; // Blue
-          // imageData[i * 4 + 3] = (legendColor[3] + imageData[i * 4 + 3]) / 2; // Alpha
           if (mask[i] % legendColors.length == 4) {
-            mask[i] = 1;
-
             imageData[i * 4] = 255; // Red 
             imageData[i * 4 + 1] = 255; // Green
             imageData[i * 4 + 2] = 255; // Blue
             imageData[i * 4 + 3] = 255; // Alpha
+          
+            // Expanded Mask
+            // for (let j=0; j<=30; j++) {
+            //   imageData[(i - j) * 4] = 255; // Red 
+            //   imageData[(i - j) * 4 + 1] = 255; // Green
+            //   imageData[(i - j) * 4 + 2] = 255; // Blue
+            //   imageData[(i - j) * 4 + 3] = 255; // Alpha
+            //   imageData[(i + j) * 4] = 255; // Red 
+            //   imageData[(i + j) * 4 + 1] = 255; // Green
+            //   imageData[(i + j) * 4 + 2] = 255; // Blue
+            //   imageData[(i + j) * 4 + 3] = 255; // Alpha
+            // }
 
-            // imageData[i * 4] = legendColor[0]; // Red 
-            // imageData[i * 4 + 1] = legendColor[1]; // Green
-            // imageData[i * 4 + 2] = legendColor[2]; // Blue
-            // imageData[i * 4 + 3] = legendColor[3]; // Alpha
+            i += 20
+            
           } else {
             mask[i] = 0;
             imageData[i * 4] = 0; // Red 
@@ -106,13 +107,13 @@ export default function Home() {
         const dataNew = new ImageData(uint8Array, width, height);
         ctx.putImageData(dataNew, 0, 0);
 
-        const dataURL = canvas.toDataURL("image/png");
-        const a = document.createElement("a");
-        a.href = dataURL;
-        a.download = "segmented_image.png";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        // const dataURL = canvas.toDataURL("image/png");
+        // const a = document.createElement("a");
+        // a.href = dataURL;
+        // a.download = "segmented_image.png";
+        // document.body.appendChild(a);
+        // a.click();
+        // document.body.removeChild(a);
 
      });
    }
