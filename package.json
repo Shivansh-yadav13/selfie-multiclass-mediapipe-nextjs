@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@huggingface/inference": "^2.6.4",
     "@mediapipe/tasks-vision": "^0.10.9",
     "next": "14.1.0",
     "react": "^18",

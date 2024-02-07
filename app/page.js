@@ -1,6 +1,7 @@
 "use client"
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { FilesetResolver, ImageSegmenter } from '@mediapipe/tasks-vision';
+import { HfInference } from '@huggingface/inference';
 
 const legendColors = [
   [255, 197, 0, 255], // Vivid Yellow
@@ -27,34 +28,52 @@ const legendColors = [
 ];
 
 export default function Home() {
- const imgRef = useRef(null);
- const canvasRef = useRef(null);
- const [selectedFile, setSelectedFile] = useState('/img.jpg');
+  const imgRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState('/img.jpg');
 
- const handleFileUpload = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    setSelectedFile(URL.createObjectURL(file)); // Create a URL for the selected file
-    // document.getElementById("img").src = selectedFile;
-    // imgRef.current.src = selectedFile;
+  const inference = new HfInference('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');
+
+  const sdxlturbo = async () => {
+    const model = 'stabilityai/sdxl-turbo';
+    const result = await inference.textToImage({
+      model: model,
+      inputs: "a boy with white shirt, hd quality ",
+      parameters: {
+        guidance_scale: 5,
+        negative_prompt: "low quality, blurry image",
+        num_inference_steps: 3,
+      }
+    })
+
+    
+
+    console.log(result);
+    setSelectedFile(URL.createObjectURL(result));
   }
-};
 
- const createImageSegmenter = async () => {
-   const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm');
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(URL.createObjectURL(file)); // Create a URL for the selected file
+    }
+  };
 
-   const imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
-     baseOptions: {
+  const createImageSegmenter = async () => {
+    const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm');
+
+    const imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
+      baseOptions: {
         modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite',
-       delegate: "CPU"
-     },
-     outputCategoryMask: true,
-     outputConfidenceMasks: false,
-     runningMode: "IMAGE"
-   });
+        delegate: "CPU"
+      },
+      outputCategoryMask: true,
+      outputConfidenceMasks: false,
+      runningMode: "IMAGE"
+    });
 
-   if (imgRef.current && canvasRef.current) {
-     imageSegmenter.segment(imgRef.current, (result) => {
+    if (imgRef.current && canvasRef.current) {
+      imageSegmenter.segment(imgRef.current, (result) => {
         const canvas = document.getElementById("canvas");
         const img = document.getElementById("img");
         canvas.width = img.width;
@@ -79,9 +98,9 @@ export default function Home() {
             imageData[i * 4 + 1] = 255; // Green
             imageData[i * 4 + 2] = 255; // Blue
             imageData[i * 4 + 3] = 255; // Alpha
-          
+
             // Expanded Mask
-            // for (let j=0; j<=30; j++) {
+            // for (let j=0; j<=20; j++) {
             //   imageData[(i - j) * 4] = 255; // Red 
             //   imageData[(i - j) * 4 + 1] = 255; // Green
             //   imageData[(i - j) * 4 + 2] = 255; // Blue
@@ -92,8 +111,8 @@ export default function Home() {
             //   imageData[(i + j) * 4 + 3] = 255; // Alpha
             // }
 
-            i += 20
-            
+            // i += 20
+
           } else {
             mask[i] = 0;
             imageData[i * 4] = 0; // Red 
@@ -107,20 +126,24 @@ export default function Home() {
         const dataNew = new ImageData(uint8Array, width, height);
         ctx.putImageData(dataNew, 0, 0);
 
-        // const dataURL = canvas.toDataURL("image/png");
-        // const a = document.createElement("a");
-        // a.href = dataURL;
-        // a.download = "segmented_image.png";
-        // document.body.appendChild(a);
-        // a.click();
-        // document.body.removeChild(a);
+        const dataURL = canvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = dataURL;
+        a.download = "segmented_image.png";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
 
-     });
-   }
- }
+      });
+    }
+  }
+  
 
- return (
+  return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
+
+      <button onClick={sdxlturbo}>Run Stable diffusion turbo</button>
+
       <h2>Iron the Dress</h2>
       <p>Dress Mask Generator</p>
       <input
@@ -129,7 +152,7 @@ export default function Home() {
         onChange={handleFileUpload} // Callback function to handle file selection
       />
 
-        <button className='bg-orange-500 px-10 py-5 rounded-xl' onClick={createImageSegmenter}>Segment & Generate Image</button>
+      <button className='bg-orange-500 px-10 py-5 rounded-xl' onClick={createImageSegmenter}>Segment & Generate Image</button>
       <div className="flex justify-between">
         <img
           src={selectedFile}
@@ -143,5 +166,5 @@ export default function Home() {
       </div>
 
     </main>
- );
+  );
 }
