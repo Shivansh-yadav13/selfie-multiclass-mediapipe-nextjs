@@ -142,7 +142,7 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
 
-      <button onClick={sdxlturbo}>Run Stable diffusion turbo</button>
+      {/* <button onClick={sdxlturbo}>Run Stable diffusion turbo</button> */}
 
       <h2>Iron the Dress</h2>
       <p>Dress Mask Generator</p>
